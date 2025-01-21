@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    env_file:
+      - .env
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+      - redis
+
+  db:
+    image: postgres:latest
+    container_name: db
+    env_file:
+      - .env
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+
+  celery:
+    build:
+      context: ./backend
+    container_name: celery
+    command: ["celery", "-A", "kualitex", "worker", "--loglevel=info"]
+    depends_on:
+      - backend
+      - redis
+
+volumes:
+  pg_data:
