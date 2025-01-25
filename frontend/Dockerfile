@@ -1,5 +1,5 @@
 # Usamos la imagen oficial de Node 18
-FROM node:18
+FROM node:22.13-alpine3.21
 
 # Establecemos el directorio de trabajo
 WORKDIR /app

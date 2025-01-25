@@ -1,51 +1,73 @@
-version: '3.8'
+version: "3.8"
 
 services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    networks:
+      - project_network
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: frontend
-    ports:
-      - "5173:5173"
     volumes:
       - ./frontend:/app
       - /app/node_modules
-    depends_on:
-      - backend
+    ports:
+      - "5173:5173"
+    networks:
+      - project_network
     env_file:
       - .env
 
-  backend:
-    build:
-      context: ./backend
-    container_name: backend
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - db
-      - redis
-
   db:
-    image: postgres:latest
+    image: postgres:17.2-alpine3.21
     container_name: db
     env_file:
       - .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - project_network
 
   redis:
-    image: redis:alpine
+    image: redis:8.0-M03-alpine3.21
     container_name: redis
+    networks:
+      - project_network
 
   celery:
     build:
       context: ./backend
     container_name: celery
     command: ["celery", "-A", "kualitex", "worker", "--loglevel=info"]
+    volumes:
+      - ./backend:/app
     depends_on:
       - backend
       - redis
+    networks:
+      - project_network
+    env_file:
+      - .env
 
 volumes:
   pg_data:
+
+networks:
+  project_network:
+    driver: bridge
